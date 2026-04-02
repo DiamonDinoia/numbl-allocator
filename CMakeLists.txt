@@ -2,19 +2,23 @@ cmake_minimum_required(VERSION 3.20)
 project(numbl-allocator C)
 
 include(FetchContent)
-FetchContent_Declare(tlsf
-  GIT_REPOSITORY https://github.com/mattconte/tlsf.git
-  GIT_TAG master
+FetchContent_Declare(mimalloc
+  GIT_REPOSITORY https://github.com/microsoft/mimalloc.git
+  GIT_TAG v2.2.2
 )
-FetchContent_MakeAvailable(tlsf)
+set(MI_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(MI_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+set(MI_BUILD_OBJECT OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(mimalloc)
 
 if(EMSCRIPTEN)
-  # For WASM, build as an executable (produces standalone .wasm)
-  add_executable(numbl_allocator src/numbl_allocator.c ${tlsf_SOURCE_DIR}/tlsf.c)
+  add_executable(numbl_allocator src/numbl_allocator.c)
 else()
-  add_library(numbl_allocator src/numbl_allocator.c ${tlsf_SOURCE_DIR}/tlsf.c)
+  add_library(numbl_allocator src/numbl_allocator.c)
 endif()
-target_include_directories(numbl_allocator PUBLIC src/ PRIVATE ${tlsf_SOURCE_DIR})
+target_link_libraries(numbl_allocator PRIVATE mimalloc-static)
+target_include_directories(numbl_allocator PUBLIC src/)
+
 
 if(EMSCRIPTEN)
   set(WASM_EXPORTED_FUNCTIONS
@@ -26,20 +30,27 @@ if(EMSCRIPTEN)
     "_numbl_alloc_stats"
     "_numbl_alloc_destroy"
     "_numbl_alloc_pool_base"
+    "_malloc"
+    "_free"
   )
   list(JOIN WASM_EXPORTED_FUNCTIONS "," WASM_EXPORTS_STR)
 
   target_compile_options(numbl_allocator PRIVATE -O3)
   target_link_options(numbl_allocator PRIVATE
-    "SHELL:-s STANDALONE_WASM"
+    "SHELL:-s MODULARIZE=1"
+    "SHELL:-s EXPORT_ES6=1"
     "SHELL:-s ALLOW_MEMORY_GROWTH=1"
-    "SHELL:-s IMPORTED_MEMORY=1"
+    "SHELL:-s MALLOC=emmalloc"
     "SHELL:-s FILESYSTEM=0"
-    "SHELL:-s ERROR_ON_UNDEFINED_SYMBOLS=1"
     "SHELL:-s EXPORTED_FUNCTIONS=[${WASM_EXPORTS_STR}]"
+    "SHELL:-s EXPORTED_RUNTIME_METHODS=[wasmMemory]"
+    "SHELL:-s ENVIRONMENT=web,worker"
     --no-entry
   )
-  set_target_properties(numbl_allocator PROPERTIES SUFFIX ".wasm")
+  set_target_properties(numbl_allocator PROPERTIES
+    SUFFIX ".mjs"
+    PREFIX ""
+  )
 else()
   target_compile_options(numbl_allocator PRIVATE -O3 -Wall -Wextra)
 endif()
