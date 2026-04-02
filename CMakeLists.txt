@@ -38,7 +38,6 @@ if(EMSCRIPTEN)
   target_compile_options(numbl_allocator PRIVATE -O3)
   target_link_options(numbl_allocator PRIVATE
     "SHELL:-s MODULARIZE=1"
-    "SHELL:-s EXPORT_ES6=1"
     "SHELL:-s ALLOW_MEMORY_GROWTH=1"
     "SHELL:-s MALLOC=emmalloc"
     "SHELL:-s FILESYSTEM=0"
@@ -48,7 +47,7 @@ if(EMSCRIPTEN)
     --no-entry
   )
   set_target_properties(numbl_allocator PROPERTIES
-    SUFFIX ".mjs"
+    SUFFIX ".js"
     PREFIX ""
   )
 else()

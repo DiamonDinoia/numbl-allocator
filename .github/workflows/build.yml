@@ -37,7 +37,7 @@ jobs:
         with:
           name: numbl-allocator-wasm
           path: |
-            build-wasm/numbl_allocator.mjs
+            build-wasm/numbl_allocator.js
             build-wasm/numbl_allocator.wasm
 
   release:
@@ -54,5 +54,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            numbl_allocator.mjs
+            numbl_allocator.js
             numbl_allocator.wasm
