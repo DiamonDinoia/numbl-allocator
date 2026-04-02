@@ -32,11 +32,13 @@ jobs:
         run: emcmake cmake -B build-wasm -DCMAKE_BUILD_TYPE=Release
       - name: Build
         run: cmake --build build-wasm --parallel
-      - name: Upload artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: numbl_allocator.wasm
-          path: build-wasm/numbl_allocator.wasm
+          name: numbl-allocator-wasm
+          path: |
+            build-wasm/numbl_allocator.mjs
+            build-wasm/numbl_allocator.wasm
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -47,8 +49,10 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: numbl_allocator.wasm
+          name: numbl-allocator-wasm
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          files: numbl_allocator.wasm
+          files: |
+            numbl_allocator.mjs
+            numbl_allocator.wasm
